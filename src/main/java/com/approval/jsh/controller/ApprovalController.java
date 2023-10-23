@@ -3,6 +3,7 @@ package com.approval.jsh.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
@@ -110,7 +111,7 @@ public class ApprovalController {
 	//5. 결재글 올리기 
 	@RequestMapping("writeProc")
 	public String writeProc(@RequestParam Map<String, Object> map, HttpSession session) {
-
+			
 			int seq = sqlSession.selectOne("mapper.dataChk", map.get("seq").toString());
 			System.out.println("seq 값 : " + seq);				
 			Map<String, Object> memInfo = (Map<String, Object>)session.getAttribute("memInfo");
@@ -151,15 +152,28 @@ public class ApprovalController {
 		return "writeView";
 	}
 	
-	//팝업창
+	// 대리결재 팝업창 
 	@RequestMapping("replace")
-	public String replace(@RequestParam Map<String, Object> map, Model model, HttpSession session ) {
-		map.put("memInfo", session.getAttribute("memInfo"));
-		
-		List<Map<String, Object>> memberchk = sqlSession.selectList("mapper.memberchk", map);
-		model.addAttribute("memberchk", memberchk);
-		System.out.println("memberchk 값 :" + memberchk);
-		
-		return "replace";
+	public String replace(@RequestParam Map<String, Object> map, Model model, HttpSession session) {
+	    map.put("memInfo", session.getAttribute("memInfo"));
+	    Map<String, Object> memInfo = (Map<String, Object>) map.get("memInfo");
+	    
+	    List<Map<String, Object>> memberchk = sqlSession.selectList("mapper.memberchk", map);
+	    
+	    model.addAttribute("memberchk", memberchk);
+	    System.out.println("memberchk 값 :" + memberchk);
+	    
+	    return "replace";
 	}
+	
+	// 대리결재 권한부여 
+		@RequestMapping("replaceAppr")
+		public String replaceAppr(@RequestParam Map<String, Object> map, HttpSession session) {
+				map.put("memInfo", session.getAttribute("memInfo"));
+			    Map<String, Object> memInfo = (Map<String, Object>) map.get("memInfo");
+			    	
+			    sqlSession.insert("mapper.replaceInsert", map);
+			    
+				return "redirect:replace";
+		}
 }

@@ -36,6 +36,14 @@
 		<result property="hisStatus" column="HIST_STATUS"/>
 		<result property="hisStatusKor" column="HIST_STATUS_KOR"/>
 	</resultMap>
+	
+	<resultMap type="map" id="proxyRs">
+		<result property="proxyMember" column="PROXY_MEMBER"/>
+		<result property="grantMember" column="GRANT_MEMBER"/>
+		<result property="grantTime" column="GRANT_TIME"/>
+		<result property="endGrant" column="END_GRANT"/>
+	</resultMap>
+	
 	<select id="memberchk" resultMap="loginRs" parameterType="map">
 		SELECT
 			MEM_ID
@@ -48,6 +56,15 @@
 			'BOSS','과장',
 			'KING','부장') MEM_RANK_KOR
 		FROM JSH_APPROVAL_MEMBER
+		WHERE 1=1
+			<if test="memInfo.memRank == 'BOSS'">
+				and MEM_RANK = 'MANAGER'
+				OR MEM_RANK = 'CLERK'
+			</if>
+			<if test="memInfo.memRank == 'KING'">
+				and MEM_RANK = 'BOSS'
+				OR MEM_RANK = 'MANAGER'
+			</if>
 	</select>
 	
 	<select id="loginChk" resultMap="loginRs" parameterType="String">
@@ -223,5 +240,19 @@
 		where appr_seq = #{seq}
 		order by his_seq desc
 	</select>
-
+	
+<insert id="replaceInsert" parameterType="map">
+		insert into JSH_APPROVAL_PROXY
+		(
+			PROXY_MEMBER
+			,GRANT_MEMBER
+			,GRANT_TIME
+			,END_GRANT
+		)values(
+			#{proxyMember}
+			,#{grantMember}
+			,sysdate
+			,sysdate + 1
+		)
+</insert>
 </mapper>

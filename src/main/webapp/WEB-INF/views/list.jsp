@@ -81,6 +81,10 @@
         color: #fff;
     }
     
+	#report1:hover tbody tr:hover td {
+	    background: red;
+	    color: white;
+	}    
 
 </style>
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -146,18 +150,12 @@
 	}
 </script>
 
-<style type="text/css">
-#report1:hover tbody tr:hover td {
-    background: red;
-    color: white;
-}
-</style>
 </head>
 
 <c:set var="name" value="${memInfo.memName}" />
 <c:set var="rank" value="${memInfo.memRankKor}" />
-
 ${name} (${rank})님 환영합니다.
+ 
 <body>
 	<div>	
 		<input type = "button" name = "writeBtn" id = "writeBtn" value = "글쓰기" onclick = "location.href = 'write'">
@@ -203,11 +201,11 @@ ${name} (${rank})님 환영합니다.
 			
 			<tbody id = "tContent">
 				<c:choose>
-					<c:when test="${empty apprList}">
-		    <tr>
-		        <td colspan="7" style="text-align: center;">데이터가 존재하지 않습니다</td>
-		    </tr>
-		</c:when>
+						<c:when test="${empty apprList}">
+						    <tr>
+						        <td colspan="7" style="text-align: center;">데이터가 존재하지 않습니다</td>
+						    </tr>
+						</c:when>
 					<c:otherwise>
 						<c:forEach items="${apprList }" var = "list">
 							<tr onclick="fncGoDetail(${list.seq})">

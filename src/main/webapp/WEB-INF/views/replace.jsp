@@ -33,9 +33,13 @@
 	    });
 	   
 	   $("#oo").click(function () {
-		   
-		   $("#replaceFrm").attr("action","replace").attr("method","post").submit();
-	    });
+		    if (confirm("대리결재 권한을 부여하시겠습니까?")) {
+		        $("#replaceFrm").attr("action", "replaceAppr").attr("method", "post").submit();
+		    } else {
+		        return false;
+		    }
+		});
+
 	   
 	   $("#logoutBtn").click(function () {
             // 로그아웃 버튼 클릭 시 확인 대화상자 표시
@@ -72,39 +76,38 @@
 			})
 		})
 	})
-	
-	function fncGoDetail(seq){
-		location.href = 'detail?seq='+seq;
-	}
+
 </script>
 <body>
 <c:set var="name" value="${memInfo.memName}" />
 <c:set var="rank" value="${memInfo.memRankKor}" />
 
 <div id="popup">
-    <form name="replaceFrm" id="replaceFrm">
-        	<div>
-			    대리결제자 :
-			    <select name="replacePerson" id="replacePerson">
-			    	<option value="" disabled selected>선택</option>
-			        <c:forEach items="${memberchk}" var="member">
-			            <option value="${member.memRankKor}">${member.memName}</option>
-			        </c:forEach>
-			    </select>
-			    <input type="hidden" name="selectedRankKor" id="selectedRankKor" value="">
-			    <p>직급 : <span id="selectedMemRank"></span></p>
-			    <p>대리자 : ${name} (${rank})</p>
-			</div>
-	        <input type="button" name="xx" id="xx" value="취소">
-	        <input type="button" name="oo" id="oo" value="승인">
-    </form>
+    <form name="replaceFrm" id="replaceFrm" method="post" action="replaceAppr">
+	    <div>
+	        대리결제자 :
+	        <select name="replacePerson" id="replacePerson">
+	            <option value="" disabled selected>선택</option>
+	            <c:forEach items="${memberchk}" var="member">
+	                <option value="${member.memRankKor}">${member.memName}</option>
+	            </c:forEach>
+	        </select>
+	        <input type="hidden" name="grantMember" id="grantMember" value="${memInfo.memName}">
+	        <input type="hidden" name="proxyMember" id="proxyMember" value="">
+	        <p>직급 : <span id="selectedMemRank"></span></p>
+	        <p>대리자 : ${name} (${rank})</p>
+	    </div>
+	    <input type="button" name="xx" id="xx" value="취소">
+	    <input type="submit" name="oo" id="oo" value="승인">
+	</form>
 </div>
 <script>
     $(document).ready(function() {
         $('#replacePerson').on('change', function() {
-            var selectedRankKor = $(this).val(); // 선택된 memRankKor 값 가져오기
-            $('#selectedRankKor').val(selectedRankKor);
-            $('#selectedMemRank').text(selectedRankKor); // 직급을 표시하는 부분 업데이트
+            var selectedRankKor = $(this).val();
+            var selectedProxyMemberName = $(this).find('option:selected').text();
+            $('#selectedMemRank').text(selectedRankKor);
+            $('#proxyMember').val(selectedProxyMemberName);
         });
     });
 </script>
