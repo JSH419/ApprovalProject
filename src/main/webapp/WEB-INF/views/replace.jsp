@@ -32,14 +32,25 @@
 		  window.close();
 	    });
 	   
-	   $("#oo").click(function () {
-		    if (confirm("대리결재 권한을 부여하시겠습니까?")) {
-		        $("#replaceFrm").attr("action", "replaceAppr").attr("method", "post").submit();
-		    } else {
-		        return false;
+	   $('#oo').click(function(e) {
+		    e.preventDefault();
+		    var selectedValue = $('#replacePerson').val();
+		    if (selectedValue === null) {
+		        alert("대리결제자를 선택하세요.");
+		    } else if (confirm("대리결재 위임하시겠습니까?")) {
+		        $('#replaceFrm').submit();
+		        alert("대리결재가 완료되었습니다.");
 		    }
 		});
 
+	   $('#replaceFrm').submit(function() {
+           var selectedValue = $('#replacePerson').val();
+           if (selectedValue === "") {
+               alert("대리결제자를 선택하세요.");
+               return false; // 폼 제출을 막음
+           }
+           return true; // 폼 제출을 허용
+       }); 
 	   
 	   $("#logoutBtn").click(function () {
             // 로그아웃 버튼 클릭 시 확인 대화상자 표시
@@ -86,13 +97,13 @@
     <form name="replaceFrm" id="replaceFrm" method="post" action="replaceAppr">
 	    <div>
 	        대리결제자 :
-	        <select name="replacePerson" id="replacePerson">
+	        <select name="replacePerson" id="replacePerson" required>
 	            <option value="" disabled selected>선택</option>
 	            <c:forEach items="${memberchk}" var="member">
-	                <option value="${member.memRankKor}">${member.memName}</option>
+	                <option value="${member.memRankKor}">${member.memId}</option>
 	            </c:forEach>
 	        </select>
-	        <input type="hidden" name="grantMember" id="grantMember" value="${memInfo.memName}">
+	        <input type="hidden" name="grantMember" id="grantMember" value="${memInfo.memId}">
 	        <input type="hidden" name="proxyMember" id="proxyMember" value="">
 	        <p>직급 : <span id="selectedMemRank"></span></p>
 	        <p>대리자 : ${name} (${rank})</p>

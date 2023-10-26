@@ -29,15 +29,15 @@ public class ApprovalController {
 	// 1. 로그인 
 	@RequestMapping("login")
 	public String loginView(@RequestParam(value="logId", required=false) String logId
-						  , @RequestParam(value="logPass", required=false) String logPass
-						  , Model model
-						  , HttpSession session
-						  , HttpServletResponse response) throws IOException {
-		//로그인 상태									
+						   ,@RequestParam(value="logPass", required=false) String logPass
+						   ,Model model
+						   ,HttpSession session
+						   ,HttpServletResponse response) throws IOException {
+		//로그인 상태	        
 		if(session.getAttribute("memInfo") != null) {
 			return "redirect:list";
-		}
-		
+		} 
+		 
 		if(logId == null) {
 			return "login";
 		}else {
@@ -49,7 +49,17 @@ public class ApprovalController {
 				model.addAttribute("loginMsg", "passwordFail");
 				return "login"; 
 			}else {
-				session.setAttribute("memInfo", map);
+		        session.setAttribute("memInfo", map);
+		        
+		        String proxyMember = map.get("memId").toString();	//session에서 memId만 가져와서 저장
+		        Map<String, Object> replace = sqlSession.selectOne("mapper.proxy", proxyMember);
+		        //memId를 통해 proxy 테이블에서 대리권한 위임을 받았는지 확인 
+		        if(replace != null) {
+		        	  String grantRank = (String) replace.get("grantRank");// 대리권한 위임자 계급 추출
+		        	  Map<String, Object> memInfo = (Map<String, Object>) session.getAttribute("memInfo");
+				      memInfo.put("memRank", grantRank);
+				      session.setAttribute("memInfo", memInfo);
+		        }
 				return "redirect:list";
 			}
 		}
@@ -72,10 +82,17 @@ public class ApprovalController {
 		List<Map<String, Object>> apprList = new ArrayList<Map<String, Object>>();
 		apprList = service.apprList(map);
 		model.addAttribute("apprList", apprList);
+		
+		List<Map<String, Object>> proxy = sqlSession.selectList("mapper.proxy", map);
+		model.addAttribute("proxy", proxy);
+		
+		System.out.println("proxy 값 : " +proxy);
 		System.out.println("apprList 값 : " +apprList);
+		
 		}
 		
 		model.addAttribute("map1", map);
+
 		return "list";
 	}
 	
@@ -92,6 +109,7 @@ public class ApprovalController {
 		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
 		list = service.apprList(map);
 		model.addAttribute("list", list);
+		
 		
 		return "searchList";
 	}
@@ -140,7 +158,6 @@ public class ApprovalController {
 	//6. 상세보기 페이지
 	@RequestMapping("detail")
 	public String detail(@RequestParam Map<String, Object> map, Model model, @RequestParam(required=false, defaultValue = "0") int seq) {
-		System.out.println("seq : " + seq);
 		Map<String, Object> detailMap = sqlSession.selectOne("mapper.detail", seq);
 		
 		List<Map<String, Object>> hisMap = service.histList(seq);
@@ -152,7 +169,7 @@ public class ApprovalController {
 		return "writeView";
 	}
 	
-	// 대리결재 팝업창 
+	//7. 대리결재 팝업창 
 	@RequestMapping("replace")
 	public String replace(@RequestParam Map<String, Object> map, Model model, HttpSession session) {
 	    map.put("memInfo", session.getAttribute("memInfo"));
@@ -166,14 +183,14 @@ public class ApprovalController {
 	    return "replace";
 	}
 	
-	// 대리결재 권한부여 
-		@RequestMapping("replaceAppr")
-		public String replaceAppr(@RequestParam Map<String, Object> map, HttpSession session) {
-				map.put("memInfo", session.getAttribute("memInfo"));
-			    Map<String, Object> memInfo = (Map<String, Object>) map.get("memInfo");
-			    	
-			    sqlSession.insert("mapper.replaceInsert", map);
-			    
-				return "redirect:replace";
-		}
+	//8. 대리결재 권한부여 
+	@RequestMapping("replaceAppr")
+	public String replaceAppr(@RequestParam Map<String, Object> map, HttpSession session) {
+			map.put("memInfo", session.getAttribute("memInfo"));
+		    Map<String, Object> memInfo = (Map<String, Object>) map.get("memInfo");
+		    	
+		    sqlSession.insert("mapper.replaceInsert", map);
+		    
+			return "redirect:replace";
+	}
 }

@@ -154,8 +154,17 @@
 
 <c:set var="name" value="${memInfo.memName}" />
 <c:set var="rank" value="${memInfo.memRankKor}" />
-${name} (${rank})님 환영합니다.
- 
+<c:set var="Id" value="${memInfo.memId}" />
+
+${name} (${rank}) <c:forEach items="${proxy }" var = "aa">
+	<tr>  
+	    - <td>${aa.grantName}</td><td>(${aa.grantRankKor})</td></br>
+		  대리결재일 : <td>${aa.grantTime}</td> ~
+		  		   <td>${aa.endGrant}</td>
+	</tr>
+</c:forEach> 님 환영합니다! 
+
+
 <body>
 	<div>	
 		<input type = "button" name = "writeBtn" id = "writeBtn" value = "글쓰기" onclick = "location.href = 'write'">

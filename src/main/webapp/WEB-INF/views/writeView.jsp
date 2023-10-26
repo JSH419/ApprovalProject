@@ -14,27 +14,29 @@
 			alert("로그인 후 이용하세요");
 			location.href = 'login';
 		}
-
+		
 		$(function(){
 			
 			var mode = '${mode}';
 			
+			// 결재글 작성자
 			var addSeq = '${listSeq}';
 			var addWriter = '${memInfo.memName}';
 			var addWriterId = '${memInfo.memId}';
 			var memRank = '${memInfo.memRank}';
 			
+			// 수정 결재 정보 
 			var mofySeq = '${detailMap.seq}';
 			var mofyWriter = '${detailMap.writeName}';
 			var mofyWriterId = '${detailMap.writeId}'
-			var mofyStatus = '${detailMap.apprStatus}';
-			
+			var mofyStatus = '${detailMap.apprStatus}';	//결재 상태 
+				
 			//결제대기
 			if(mofyStatus == 'wat'){
 				
 				$("#signWait").prop("checked",true);
 				
-				//결재 올린 사람과 결재자가 다른 경우
+				//로그인 ID와  결재자가 다른 경우
 				if(addWriterId != mofyWriterId){
 					$("#tmpBtn").hide();
 				}else{
@@ -56,11 +58,13 @@
 			}else if( mofyStatus == 'end'){
 				$("input[name=sign]").prop("checked",true);
 				$("#tmpBtn, #retBtn, #appBtn").hide();
+				
 			//임시저장	
 			}else if( mofyStatus == 'tmp'){
 				if(addWriterId == mofyWriterId){
 					$("#retBtn").hide();
 				}
+				
 			//반려
 			}else if( mofyStatus == 'ret'){
 				if(addWriterId == mofyWriterId){
@@ -70,6 +74,7 @@
 				}
 			}
 			
+			//글쓰기 모드 
 			if(mode == 'add'){
 				$("#seq").val(addSeq); 
 				$("#writer").val(addWriter);
@@ -77,11 +82,10 @@
 				$("#retBtn").hide();
 				$("#subj").removeAttr("readonly");
 				$("#content").removeAttr("readonly");
-			}else {
+			}else {	//상세페이지 수정 모드 
 				$("#seq").val(mofySeq);
 				$("#writer").val(mofyWriter);
 				$("#writerId").val(mofyWriterId);
-
 			}
 			
 			if((addWriterId == mofyWriterId) &&  ( mofyStatus == 'tmp' || mofyStatus == 'ret')){
@@ -170,7 +174,6 @@
 		</div>
 	</form>
 	<div>
-	
 		<input type = "button" name = "tmpBtn" id = "tmpBtn" value = "임시저장" onclick = "fncSave('tmp')">
 		<input type = "button" name = "retBtn" id = "retBtn" value = "반려" onclick="fncSave('ret')">
 		<input type = "button" name = "appBtn" id = "appBtn" value = "결재" onclick="fncSave('app')">
@@ -183,12 +186,12 @@
 				<th>결재자</th>
 				<th>결재상태</th>
 			</tr>
-			<c:forEach items="${appHistory }" var = "his">
+			<c:forEach items="${appHistory }" var = "history">
 				<tr> 
-					<td>${his.hisSeq }</td>
-					<td>${his.hisAppDate}</td>
-					<td>${his.hisApperName }</td>
-					<td>${his.hisStatusKor }</td>
+					<td>${history.hisSeq }</td>
+					<td>${history.hisAppDate}</td>
+					<td>${history.hisApperName }</td>
+					<td>${history.hisStatusKor }</td>
 				</tr>
 			</c:forEach>
 		</table>

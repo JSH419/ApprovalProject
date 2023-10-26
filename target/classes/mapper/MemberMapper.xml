@@ -42,7 +42,32 @@
 		<result property="grantMember" column="GRANT_MEMBER"/>
 		<result property="grantTime" column="GRANT_TIME"/>
 		<result property="endGrant" column="END_GRANT"/>
+		<result property="grantName" column="GRANT_NAME"/>
+		<result property="grantRank" column="GRANT_RANK"/>
+		<result property="grantRankKor" column="GRANT_RANK_KOR"/>
 	</resultMap>
+	
+	<select id="proxy" resultMap="proxyRs" parameterType="map">
+	    SELECT
+	        PROXY_MEMBER
+	        , GRANT_MEMBER
+	        ,(SELECT MEM_NAME FROM JSH_APPROVAL_MEMBER ga WHERE ga.mem_id = sa.grant_member) GRANT_NAME
+	        , (SELECT MEM_RANK FROM JSH_APPROVAL_MEMBER ga WHERE ga.mem_id = sa.grant_member) GRANT_RANK
+	        , (select
+				 MEM_NAME
+			  from JSH_APPROVAL_MEMBER ga
+			  where ga.mem_id = sa.grant_member) GRANT_NAME,
+			  DECODE((SELECT MEM_RANK FROM JSH_APPROVAL_MEMBER ga WHERE ga.mem_id = sa.grant_member),
+				  		'CLERK','사원',
+						'MANAGER','대리',
+						'BOSS','과장',
+						'KING','부장') GRANT_RANK_KOR
+	        , GRANT_TIME
+	        , END_GRANT
+	    FROM JSH_APPROVAL_PROXY sa
+	    WHERE PROXY_MEMBER = #{memInfo.memId}
+	</select>
+	
 	
 	<select id="memberchk" resultMap="loginRs" parameterType="map">
 		SELECT
@@ -82,7 +107,7 @@
 		FROM JSH_APPROVAL_MEMBER
 		WHERE MEM_ID = #{logId}
 	</select>
-	
+		
 		<select id="apprList" resultMap="apprListRs" parameterType="map">
 			SELECT
 				SEQ
@@ -106,6 +131,41 @@
 				,(select MEM_NAME from JSH_APPROVAL_MEMBER sam where sam.mem_id = sal.APPR_APPER) APPER_NAME
 			FROM JSH_APPROVAL_LIST sal
 			WHERE 1=1
+			<if test="memInfo.memRank == 'CLERK'">
+			    and WRITE_ID = #{memInfo.memId} 
+			</if>
+			<if test="memInfo.memRank == 'MANAGER'">
+			    and WRITE_ID = #{memInfo.memId}
+			</if>
+			<if test="memInfo.memRank == 'BOSS'">
+			    	and (APPR_STATUS = 'wat' <!-- 결제대기 글 -->
+			        OR (APPR_STATUS = 'end' AND APPR_APPER = #{memInfo.memId}) <!-- 자신이 썼고, 결재완료 글 -->
+			        OR SEQ IN (
+			            SELECT appr_seq
+			            FROM (
+			                SELECT
+			                    his_seq,
+			                    appr_seq,
+			                    his_app_date,
+			                    hist_apper,
+			                    hist_status,
+			                    ROW_NUMBER() OVER (PARTITION BY appr_seq ORDER BY his_seq DESC) AS row_num
+			                FROM JSH_APPROVAL_HISTORY
+			            ) Rank 
+			            WHERE row_num IN (1, 2) 
+			            AND hist_apper = #{memInfo.memId} <!-- 과장이 결재에 관여한 글 -->
+			            AND APPR_STATUS !='tmp')<!-- 과장이 결재에 관여했지만 임시저장인 글은x -->
+			        OR (APPR_APPER = #{memInfo.memId} and APPR_STATUS = 'ret') <!-- 결재자가 자신이면서 반려당한 글 -->
+			        OR (WRITE_ID = #{memInfo.memId} and APPR_STATUS = 'ret')   <!-- 내가 썼는데 반려당한 글 -->
+			        OR (WRITE_ID = #{memInfo.memId} and APPR_STATUS = 'tmp'))  <!-- 내가 썼는데 임시저장인 글 -->
+			</if>
+			<if test="memInfo.memRank == 'KING'">
+			    and (APPR_STATUS = 'ing'	<!-- 결제중인 글 -->
+			        OR APPR_STATUS = 'end'	<!-- 결제완료  -->
+			        OR (APPR_APPER = #{memInfo.memId} and APPR_STATUS = 'ret')<!-- 자신이 반려시킨 글 --> 
+			        OR (WRITE_ID = #{memInfo.memId} and APPR_STATUS = 'tmp')) <!-- 자신이 쓴 임시저장글 -->
+			</if>
+			
 			<if test="searchStatus != 'stEmp' and searchStatus != null and searchStatus != ''">
 				and APPR_STATUS = #{searchStatus}
 			</if>
@@ -115,25 +175,7 @@
 			<if test="enDate != null and enDate != ''">
 			    and APPR_REG_DATE &lt;= TO_DATE(#{enDate}, 'yyyy-MM-dd') +1
 			</if>
-			<if test="memInfo.memRank == 'CLERK' or memInfo.memRank == 'MANAGER'">
-			    and WRITE_ID = #{memInfo.memId}
-			</if>
-			<if test="memInfo.memRank == 'BOSS'">
-			    and (APPR_APPER = #{memInfo.memId} <!-- 결재자가 자기 자신인 글 --> 
-			        OR APPR_STATUS = 'wat' <!-- 결제대기 글 -->
-			        OR (APPR_STATUS = 'end' AND APPR_APPER = #{memInfo.memId}) <!-- 자신이 썼고, 결재완료 글 -->
-			        OR (APPR_APPER = #{memInfo.memId} and APPR_STATUS = 'ing') <!-- 결재자가 자신이면서 결제중인 글 -->
-			        OR (APPR_APPER = #{memInfo.memId} and APPR_STATUS = 'ret') <!-- 결재자가 자신이면서 반려당한 글 -->
-			        OR (WRITE_ID = #{memInfo.memId} and APPR_STATUS = 'ret') <!-- 내가 썼는데 반려당한 글 -->
-			        OR (WRITE_ID = #{memInfo.memId} and APPR_STATUS = 'tmp')) <!-- 내가 썼는데 임시저장인 글 -->
-			</if>
-			<if test="memInfo.memRank == 'KING'">
-			    and (APPR_STATUS = 'ing'	<!-- 결제중인 글 -->
-			        OR APPR_STATUS = 'end'	<!-- 결제완료 글, 다른 부장이 완료한 것도 보인다. -->
-			        OR APPR_STATUS = 'ret'<!-- 반려시킨 글 --> 
-			        OR (WRITE_ID = #{memInfo.memId} and APPR_STATUS = 'tmp')) <!-- 자신이 쓴 임시저장글 -->
-			</if>
-				
+			
 			<if test="searchType == 'writeName'">
 			    and write_id in (select mem_id from JSH_APPROVAL_MEMBER where mem_name like '%${searchTxt}%')
 			</if>
@@ -143,10 +185,8 @@
 			<if test="searchType == 'apperName'">
 			    and APPR_APPER like '%${searchTxt}%'
 			</if>
-
 			order by seq desc
 		</select>
-	
 	
 	<select id="writeSeq" resultType="integer">
 		select nvl(max(SEQ), 0) +1 from JSH_APPROVAL_LIST
@@ -195,26 +235,27 @@
 		)
 	</insert>
 	
-<update id="update" parameterType="map">
-    update JSH_APPROVAL_LIST
-    set
-        APPR_SUBJECT = #{subj},
-        APPR_CONTENT = #{content},
-        APPR_STATUS = #{status},
-        APPR_DATE = 
-        <choose>
-            <when test="status == 'tmp'">null</when>
-            <when test="status == 'wat'">null</when>
-            <otherwise>sysdate</otherwise>
-        </choose>,
-        APPR_APPER = 
-        <choose>
-            <when test="status == 'tmp'">null</when>
-            <when test="status == 'wat'">null</when>
-            <otherwise>#{memInfo.memId}</otherwise>
-        </choose>
-    where seq = #{seq}
-</update>
+	<update id="update" parameterType="map">
+	    update JSH_APPROVAL_LIST
+	    set
+	        APPR_SUBJECT = #{subj},
+	        APPR_CONTENT = #{content},
+	        APPR_STATUS = #{status},
+	        APPR_DATE = 
+	        <choose>
+	            <when test="status == 'tmp'">null</when>
+	            <when test="status == 'wat'">null</when>
+	            <otherwise>sysdate</otherwise>
+	        </choose>,
+	        APPR_APPER = 
+	        <choose>
+	            <when test="status == 'tmp'">null</when>
+	            <when test="status == 'wat'">null</when>
+	            <otherwise>#{memInfo.memId}</otherwise>
+	        </choose>
+	    where seq = #{seq}
+	</update>
+	
 	<insert id="history" parameterType="map">
 		insert into JSH_approval_history 
 		values 
