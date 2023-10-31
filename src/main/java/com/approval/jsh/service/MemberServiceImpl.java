@@ -26,4 +26,9 @@ public class MemberServiceImpl implements MemberService{
 		return dao.histList(seq);
 	}
 
+	@Override
+	public Map<String, Object> isProxyMember(String memId) {
+        
+        return dao.isProxyMember(memId); // replace가 null이 아니면 true, null이면 false를 반환
+    }
 }

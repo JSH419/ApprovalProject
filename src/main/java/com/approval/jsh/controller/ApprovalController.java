@@ -51,6 +51,17 @@ public class ApprovalController {
 			}else {
 		        session.setAttribute("memInfo", map);
 		        
+		        
+		        // 대리 결재 여부 확인
+//	            Map<String, Object> isProxyMember = (Map<String, Object>) service.isProxyMember(logId);
+//	            String grantRank = (String) isProxyMember.get("grantRank");
+//	            String grantMember = (String) isProxyMember.get("grantMember");
+//	            System.out.println("grantRank 값 : " + grantRank);
+//	            System.out.println("grantMember 값 : " + grantMember);
+//	            
+//	            session.setAttribute("grantRank", grantRank);
+//	            session.setAttribute("grantMember", grantMember);
+	            
 		        String proxyMember = map.get("memId").toString();	//session에서 memId만 가져와서 저장
 		        Map<String, Object> replace = sqlSession.selectOne("mapper.proxy", proxyMember);
 		        //memId를 통해 proxy 테이블에서 대리권한 위임을 받았는지 확인 
@@ -59,7 +70,7 @@ public class ApprovalController {
 		        	  Map<String, Object> memInfo = (Map<String, Object>) session.getAttribute("memInfo");
 				      memInfo.put("memRank", grantRank);
 				      session.setAttribute("memInfo", memInfo);
-		        }
+		        } // 계급 교체, 이걸 뺴고 
 				return "redirect:list";
 			}
 		}
@@ -175,10 +186,10 @@ public class ApprovalController {
 	    map.put("memInfo", session.getAttribute("memInfo"));
 	    Map<String, Object> memInfo = (Map<String, Object>) map.get("memInfo");
 	    
+	    // 대리결재 등록 가능한 사람 조회 (1, 2계급 밑의 직원들) 
 	    List<Map<String, Object>> memberchk = sqlSession.selectList("mapper.memberchk", map);
 	    
 	    model.addAttribute("memberchk", memberchk);
-	    System.out.println("memberchk 값 :" + memberchk);
 	    
 	    return "replace";
 	}

@@ -25,4 +25,10 @@ public class MemberDAOImpl implements MemberDAO{
 		// TODO Auto-generated method stub
 		return sql.selectList("mapper.histList", seq);
 	}
+
+	@Override
+	public Map<String, Object> isProxyMember(String memId) {
+	    
+		return sql.selectOne("mapper.proxy", memId);
+	}
 }

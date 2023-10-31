@@ -11,6 +11,8 @@
 		<result property="memName" column="MEM_NAME"/>
 		<result property="memRank" column="MEM_RANK"/>
 		<result property="memRankKor" column="MEM_RANK_KOR"/>
+		<result property="endGrant" column="END_GRANT"/>
+		<result property="memEndGrant" column="MEM_END_GRANT"/>
 	</resultMap>
 	
 	<resultMap type="map" id="apprListRs">
@@ -50,10 +52,10 @@
 	<select id="proxy" resultMap="proxyRs" parameterType="map">
 	    SELECT
 	        PROXY_MEMBER
-	        , GRANT_MEMBER
+	        ,GRANT_MEMBER
 	        ,(SELECT MEM_NAME FROM JSH_APPROVAL_MEMBER ga WHERE ga.mem_id = sa.grant_member) GRANT_NAME
-	        , (SELECT MEM_RANK FROM JSH_APPROVAL_MEMBER ga WHERE ga.mem_id = sa.grant_member) GRANT_RANK
-	        , (select
+	        ,(SELECT MEM_RANK FROM JSH_APPROVAL_MEMBER ga WHERE ga.mem_id = sa.grant_member) GRANT_RANK
+	        ,(select
 				 MEM_NAME
 			  from JSH_APPROVAL_MEMBER ga
 			  where ga.mem_id = sa.grant_member) GRANT_NAME,
@@ -68,29 +70,41 @@
 	    WHERE PROXY_MEMBER = #{memInfo.memId}
 	</select>
 	
-	
 	<select id="memberchk" resultMap="loginRs" parameterType="map">
 		SELECT
-			MEM_ID
-			,MEM_NAME
-			,MEM_RANK
-			,decode
-			(MEM_RANK, 
-			'CLERK','사원',
-			'MANAGER','대리',
-			'BOSS','과장',
-			'KING','부장') MEM_RANK_KOR
-		FROM JSH_APPROVAL_MEMBER
-		WHERE 1=1
-			<if test="memInfo.memRank == 'BOSS'">
-				and MEM_RANK = 'MANAGER'
-				OR MEM_RANK = 'CLERK'
-			</if>
-			<if test="memInfo.memRank == 'KING'">
-				and MEM_RANK = 'BOSS'
-				OR MEM_RANK = 'MANAGER'
-			</if>
-	</select>
+		    MEM_ID,
+		    MEM_NAME,
+		    MEM_RANK,
+		    decode
+		    (MEM_RANK, 
+		    'CLERK','사원',
+		    'MANAGER','대리',
+		    'BOSS','과장', 
+		    'KING','부장') MEM_RANK_KOR,
+		    MEM_END_GRANT
+		FROM (
+			SELECT
+				MEM_ID
+				,MEM_NAME
+				,MEM_RANK
+				,decode
+				(MEM_RANK, 
+				'CLERK','사원',
+				'MANAGER','대리',
+				'BOSS','과장', 
+				'KING','부장') MEM_RANK_KOR
+				,(select end_grant from JSH_APPROVAL_PROXY jo where jo.proxy_member = do.mem_id) AS MEM_END_GRANT
+			FROM JSH_APPROVAL_MEMBER do 
+			)WHERE 1=1 
+				<if test="memInfo.memRank == 'BOSS'">
+				    and (MEM_RANK = 'MANAGER' OR MEM_RANK = 'CLERK')
+				    and (MEM_END_GRANT IS NULL OR MEM_END_GRANT &lt; sysdate)
+				</if>
+				<if test="memInfo.memRank == 'KING'">
+				    and (MEM_RANK = 'BOSS' OR MEM_RANK = 'MANAGER')
+				    and (MEM_END_GRANT IS NULL OR MEM_END_GRANT &lt; sysdate)
+				</if>
+		</select>
 	
 	<select id="loginChk" resultMap="loginRs" parameterType="String">
 		SELECT
@@ -132,18 +146,43 @@
 			FROM JSH_APPROVAL_LIST sal
 			WHERE 1=1
 			<if test="memInfo.memRank == 'CLERK'">
-			    and WRITE_ID = #{memInfo.memId} 
+		    	and WRITE_ID = #{memInfo.memId}
+		    	<!-- <if test="grantRank == 'BOSS'">
+		    		 AND (
+			                APPR_STATUS = 'wat'
+			                OR (APPR_STATUS = 'end' AND APPR_APPER = #{grantMember})
+			                OR SEQ IN ( 
+			                    SELECT appr_seq 
+			                    FROM ( 
+			                        SELECT 
+			                            his_seq,
+			                            appr_seq,
+			                            his_app_date,
+			                            hist_apper,
+			                            hist_status,
+			                            ROW_NUMBER() OVER (PARTITION BY appr_seq ORDER BY his_seq DESC) AS row_num
+			                        FROM JSH_APPROVAL_HISTORY
+			                    ) Rank 
+			                    WHERE row_num IN (1, 2) 
+			                    AND hist_apper = #{grantMember}
+			                    AND APPR_STATUS != 'tmp'
+			                )
+			                OR (APPR_APPER = #{grantMember} AND APPR_STATUS = 'ret')
+			                OR (WRITE_ID = #{grantMember} AND APPR_STATUS = 'ret')
+			                OR (WRITE_ID = #{grantMember} AND APPR_STATUS = 'tmp')
+			            )
+		    	</if> -->
 			</if>
 			<if test="memInfo.memRank == 'MANAGER'">
 			    and WRITE_ID = #{memInfo.memId}
-			</if>
+			</if>										<!-- if proxy 대리권한  -->
 			<if test="memInfo.memRank == 'BOSS'">
 			    	and (APPR_STATUS = 'wat' <!-- 결제대기 글 -->
 			        OR (APPR_STATUS = 'end' AND APPR_APPER = #{memInfo.memId}) <!-- 자신이 썼고, 결재완료 글 -->
-			        OR SEQ IN (
-			            SELECT appr_seq
-			            FROM (
-			                SELECT
+			        OR SEQ IN ( 
+			            SELECT appr_seq 
+			            FROM ( 
+			                SELECT 
 			                    his_seq,
 			                    appr_seq,
 			                    his_app_date,

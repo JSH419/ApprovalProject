@@ -156,14 +156,15 @@
 <c:set var="rank" value="${memInfo.memRankKor}" />
 <c:set var="Id" value="${memInfo.memId}" />
 
-${name} (${rank}) <c:forEach items="${proxy }" var = "aa">
-	<tr>  
-	    - <td>${aa.grantName}</td><td>(${aa.grantRankKor})</td></br>
-		  대리결재일 : <td>${aa.grantTime}</td> ~
-		  		   <td>${aa.endGrant}</td>
-	</tr>
-</c:forEach> 님 환영합니다! 
-
+${name} (${rank}) 님 환영합니다!
+<c:if test="${not empty proxy}">
+    <c:forEach items="${proxy}" var="aa">
+        <tr>
+            - <td>${aa.grantName}</td><td>(${aa.grantRankKor})</td> 대리결재
+            <br> 대리결재일 : <td>${aa.grantTime}</td> ~ <td>${aa.endGrant}</td>
+        </tr>
+    </c:forEach>
+</c:if>
 
 <body>
 	<div>	
@@ -223,7 +224,15 @@ ${name} (${rank}) <c:forEach items="${proxy }" var = "aa">
 							    <td>${list.apprSubject }</td>
 							    <td>${list.apprRegDate }</td>
 							    <td>${list.apprDate }</td>
-							    <td>${list.apperName }</td>
+							     <c:choose>
+						           <c:when test="${list.apprApper == Id}">
+									    <td>${list.apperName}<c:forEach items="${proxy}" var="aa">(${aa.grantName})</c:forEach></td>
+								   </c:when>
+						            <c:otherwise>
+						                <td>${list.apperName}</td>
+						            </c:otherwise>
+						        </c:choose>
+						
 							    <td>${list.apprStatusKor }</td>
 							</tr>
 						</c:forEach> 	

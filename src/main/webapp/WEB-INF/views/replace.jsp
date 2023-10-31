@@ -95,32 +95,35 @@
 
 <div id="popup">
     <form name="replaceFrm" id="replaceFrm" method="post" action="replaceAppr">
-	    <div>
-	        대리결제자 :
-	        <select name="replacePerson" id="replacePerson" required>
-	            <option value="" disabled selected>선택</option>
-	            <c:forEach items="${memberchk}" var="member">
-	                <option value="${member.memRankKor}">${member.memId}</option>
-	            </c:forEach>
-	        </select>
-	        <input type="hidden" name="grantMember" id="grantMember" value="${memInfo.memId}">
-	        <input type="hidden" name="proxyMember" id="proxyMember" value="">
-	        <p>직급 : <span id="selectedMemRank"></span></p>
-	        <p>대리자 : ${name} (${rank})</p>
-	    </div>
-	    <input type="button" name="xx" id="xx" value="취소">
-	    <input type="submit" name="oo" id="oo" value="승인">
-	</form>
+        <div>
+            대리결제자 :
+            <select name="replacePerson" id="replacePerson" required>
+                <option value="" disabled selected>선택</option>
+                <c:forEach items="${memberchk}" var="member">
+                    <option value="${member.memId}" data-rank="${member.memRankKor}">${member.memName}</option>
+                </c:forEach>
+            </select>
+            <input type="hidden" name="grantMember" id="grantMember" value="${memInfo.memId}">
+            <input type="hidden" name="proxyMember" id="proxyMember" value="">
+            <p>직급 : <span id="selectedMemRank"></span></p>
+            <p>대리자 : ${name} (${rank})</p>
+        </div>
+        <input type="button" name="xx" id="xx" value="취소">
+        <input type="submit" name="oo" id="oo" value="승인">
+    </form>
 </div>
 <script>
     $(document).ready(function() {
         $('#replacePerson').on('change', function() {
-            var selectedRankKor = $(this).val();
-            var selectedProxyMemberName = $(this).find('option:selected').text();
-            $('#selectedMemRank').text(selectedRankKor);
-            $('#proxyMember').val(selectedProxyMemberName);
+            var selectedProxyMemberId = $(this).val(); // memId 값
+            var selectedProxyMemberRank = $(this).find('option:selected').data('rank'); // memRank 값
+            var selectedRankKor = $(this).find('option:selected').text();
+            $('#selectedMemRank').text(selectedProxyMemberRank); // memRank를 표시
+            $('#proxyMember').val(selectedProxyMemberId); // memId를 할당
         });
     });
 </script>
+
+
 </body>
 </html>
